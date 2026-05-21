@@ -28,7 +28,9 @@ multi-chain payment support across Solana, Base, Polygon and BNB Chain.
   rebalancing, and a weekly intelligence report.
 - **Resilient by design** — best-effort live data with a curated baseline
   fallback, so the product works even without API keys.
-- **Landing page** — live stats, pool cards, and transparent pricing.
+- **Landing page** — live stats, pool cards, a multi-chain payment
+  selector, and wallet connection (EVM via RainbowKit, Solana via Phantom /
+  Solflare).
 
 ### API Routes
 
@@ -156,7 +158,9 @@ Solana・Base・Polygon・BNB Chain のマルチチェーン決済に対応し�
   リバランス提案、週次インテリジェンスレポート。
 - **堅牢な設計** — ライブデータはベストエフォートで取得し、取得できない
   場合は厳選したベースラインにフォールバック。API キーなしでも動作します。
-- **ランディングページ** — ライブ統計・プールカード・透明な料金表示。
+- **ランディングページ** — ライブ統計・プールカード・マルチチェーン決済
+  セレクター・ウォレット接続（EVM は RainbowKit、Solana は Phantom /
+  Solflare）。
 
 ### API ルート
 

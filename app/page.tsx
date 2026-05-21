@@ -1,3 +1,4 @@
+import ChainSelector from "@/components/ChainSelector";
 import { getScoredPools } from "@/lib/data";
 import type { Pool } from "@/lib/types";
 
@@ -136,7 +137,17 @@ export default async function Home() {
       </section>
 
       <div className="section-head">
-        <span className="section-title">Pricing — x402 / Base USDC</span>
+        <span className="section-title">
+          Payment Networks — 決済ネットワーク
+        </span>
+        <span className="section-note">対応チェーンとトークンを選択</span>
+      </div>
+      <section className="chain-section">
+        <ChainSelector />
+      </section>
+
+      <div className="section-head">
+        <span className="section-title">Pricing — x402 マルチチェーン対応</span>
         <span className="section-note">支払いは1リクエスト単位</span>
       </div>
       <section className="pricing">
