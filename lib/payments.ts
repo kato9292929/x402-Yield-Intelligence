@@ -3,8 +3,10 @@ import type { RouteConfig } from "x402/types";
 
 export const SOLANA_USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 export const USDT_BNB = "0x55d398326f99059fF775485246999027B3197955";
-export const JPYC_POLYGON = (process.env.NEXT_PUBLIC_JPYC_CONTRACT ??
-  "0x431D5dfF03120AFA4bDf332c61A6e1766eF37BF") as `0x${string}`;
+export const JPYC_POLYGON = (
+  process.env.NEXT_PUBLIC_JPYC_CONTRACT ??
+  "0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB"
+).toLowerCase() as `0x${string}`;
 
 export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
