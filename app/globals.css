@@ -1,0 +1,363 @@
+:root {
+  --bg: #0a0a0a;
+  --bg-raised: #121212;
+  --bg-card: #161616;
+  --border: #262626;
+  --border-soft: #1e1e1e;
+  --gold: #c8a96e;
+  --gold-dim: #8c7649;
+  --green: #4ade80;
+  --red: #f87171;
+  --text: #ededed;
+  --text-dim: #8a8a8a;
+  --text-faint: #5c5c5c;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.page {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 56px 24px 80px;
+}
+
+/* Header */
+.header {
+  border-bottom: 1px solid var(--border-soft);
+  padding-bottom: 32px;
+  margin-bottom: 40px;
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  background: rgba(74, 222, 128, 0.06);
+  border-radius: 999px;
+  padding: 6px 14px;
+  margin-bottom: 22px;
+}
+
+.live-badge.offline {
+  color: var(--text-dim);
+  border-color: var(--border);
+  background: transparent;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+
+.live-badge.offline .live-dot {
+  background: var(--text-faint);
+  box-shadow: none;
+}
+
+.title {
+  font-size: clamp(34px, 6vw, 58px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.title .accent {
+  color: var(--gold);
+}
+
+.subtitle {
+  margin-top: 14px;
+  font-size: 16px;
+  color: var(--text-dim);
+  font-weight: 300;
+}
+
+.sources {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+}
+
+/* Stats */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 48px;
+}
+
+.stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.stat-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.stat-value {
+  margin-top: 10px;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.stat-value.gold {
+  color: var(--gold);
+}
+
+.stat-value.green {
+  color: var(--green);
+}
+
+/* Section heading */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.section-title {
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.section-note {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* Pool cards */
+.pools {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 52px;
+}
+
+.pool-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color 0.15s ease;
+}
+
+.pool-card:hover {
+  border-color: var(--gold-dim);
+}
+
+.pool-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.pool-protocol {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.pool-name {
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.pool-apy {
+  text-align: right;
+}
+
+.pool-apy-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.pool-apy-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.pool-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  border-top: 1px solid var(--border-soft);
+  padding-top: 14px;
+}
+
+.metric-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.metric-value {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.metric-value.flow {
+  color: var(--gold);
+}
+
+.pool-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+.badge.high {
+  color: var(--green);
+  background: rgba(74, 222, 128, 0.08);
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.badge.moderate {
+  color: var(--gold);
+  background: rgba(200, 169, 110, 0.08);
+  border-color: rgba(200, 169, 110, 0.3);
+}
+
+.badge.monitor {
+  color: var(--text-dim);
+  background: rgba(138, 138, 138, 0.06);
+  border-color: var(--border);
+}
+
+.detail-link {
+  font-size: 12px;
+  color: var(--gold);
+  font-weight: 500;
+}
+
+.detail-link .price {
+  color: var(--text-faint);
+}
+
+/* Pricing */
+.pricing {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 52px;
+}
+
+.price-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.price-name {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.price-amount {
+  margin-top: 10px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.price-endpoint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* Footer */
+.footer {
+  border-top: 1px solid var(--border-soft);
+  padding-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.disclaimer {
+  font-size: 12px;
+  color: var(--text-faint);
+  line-height: 1.6;
+}
+
+.footer-meta {
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 900px) {
+  .stats,
+  .pricing {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pools {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .stats,
+  .pricing,
+  .pools {
+    grid-template-columns: 1fr;
+  }
+}
