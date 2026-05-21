@@ -1,0 +1,191 @@
+# x402 Yield Intelligence
+
+> Solana DeFi smart-money yield intelligence, paid per request via x402.
+> Solana DeFi のスマートマネー利回りインテリジェンス。x402 でリクエスト課金。
+
+[English](#english) ・ [日本語](#日本語)
+
+---
+
+## English
+
+### Overview
+
+**x402 Yield Intelligence** is a Next.js 15 application that tracks where
+*smart money* is allocating capital across Solana DeFi pools (Kamino, Drift,
+Jupiter Lend, Marinade, Jito) using Nansen positioning data, and uses Claude
+to analyze optimal yield strategies. Every analysis endpoint is monetized
+per request through the [x402](https://x402.org) payment protocol on Base
+USDC.
+
+### Features
+
+- **Four x402-protected API routes** — pay-per-call with Base USDC.
+- **Smart-money tracking** — Nansen smart-money positions overlaid onto a
+  curated pool baseline.
+- **Claude analysis** — optimal allocation, pool deep-dives, portfolio
+  rebalancing, and a weekly intelligence report.
+- **Resilient by design** — best-effort live data with a curated baseline
+  fallback, so the product works even without API keys.
+- **Landing page** — live stats, pool cards, and transparent pricing.
+
+### API Routes
+
+| Route | Method | Price | Description |
+|---|---|---|---|
+| `/api/yield/scan` | GET | $0.20 | Top 10 pools by smart-money inflow + APY score, with Claude allocation analysis |
+| `/api/yield/pool` | POST | $0.30 | Deep analysis of one pool: APY history, IL risk, smart-money history |
+| `/api/yield/portfolio` | POST | $0.50 | Wallet position analysis + rebalancing recommendations |
+| `/api/yield/weekly` | GET | $2.00 | Weekly Solana DeFi yield intelligence report (~2000 chars) |
+
+**Request bodies**
+
+- `POST /api/yield/pool` — `{ "protocol": string, "pool": string }`
+- `POST /api/yield/portfolio` — `{ "walletAddress": string, "riskTolerance": "LOW" | "MEDIUM" | "HIGH" }`
+
+Unprotected requests return HTTP `402` with x402 payment requirements.
+
+### Data Sources
+
+| Source | Endpoint | Auth |
+|---|---|---|
+| Nansen Smart Money | `api.nansen.ai/defi/smart-money/positions?chain=solana` | `x-api-key` |
+| Kamino | `api.kamino.finance/strategies` | none |
+| Drift | `mainnet-beta.api.drift.trade/stats` | none |
+| Jupiter Price | `price.jup.ag/v6/price` | none |
+
+All sources are fetched best-effort with timeouts; a curated baseline keeps
+the app functional if any source is unreachable.
+
+### Getting Started
+
+```bash
+npm install
+cp .env.example .env.local   # then fill in the values
+npm run build
+npm start                    # production
+# or
+npm run dev                  # development
+```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `NANSEN_API_KEY` | optional | Nansen API key for live smart-money data |
+| `ANTHROPIC_API_KEY` | optional | Claude API key for AI analysis |
+| `WALLET_ADDRESS` | **yes** | Address that receives x402 payments (Base) |
+| `FACILITATOR_URL` | **yes** | x402 facilitator URL |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | optional | WalletConnect project ID |
+
+Without `NANSEN_API_KEY` / `ANTHROPIC_API_KEY` the app falls back to a
+curated baseline and deterministic analysis. Without `WALLET_ADDRESS` the
+x402 `payTo` defaults to the zero address — set it before going live.
+
+### Tech Stack
+
+Next.js 15.5.9 · React 19 · x402-next 1.2.0 · `@anthropic-ai/sdk` · viem ·
+wagmi · RainbowKit · TanStack Query.
+
+### Deployment
+
+Deploy to Vercel and set all environment variables from `.env.example` in
+the project settings.
+
+### Disclaimer
+
+This tool is for informational purposes only. DeFi investing carries risk.
+Make your own investment decisions.
+
+---
+
+## 日本語
+
+### 概要
+
+**x402 Yield Intelligence** は、Solana DeFi の各プール（Kamino・Drift・
+Jupiter Lend・Marinade・Jito）に *スマートマネー* がどこへ資金を入れている
+かを Nansen のポジションデータで取得し、Claude が最適な利回り戦略を分析する
+Next.js 15 アプリケーションです。すべての分析エンドポイントは
+[x402](https://x402.org) 決済プロトコル（Base USDC）でリクエスト単位の
+課金が行われます。
+
+### 特徴
+
+- **x402 保護された 4 つの API ルート** — Base USDC によるリクエスト課金。
+- **スマートマネー追跡** — Nansen のスマートマネーポジションを、厳選した
+  プールのベースラインに重ね合わせ。
+- **Claude による分析** — 最適配分、プール詳細分析、ポートフォリオの
+  リバランス提案、週次インテリジェンスレポート。
+- **堅牢な設計** — ライブデータはベストエフォートで取得し、取得できない
+  場合は厳選したベースラインにフォールバック。API キーなしでも動作します。
+- **ランディングページ** — ライブ統計・プールカード・透明な料金表示。
+
+### API ルート
+
+| ルート | メソッド | 料金 | 説明 |
+|---|---|---|---|
+| `/api/yield/scan` | GET | $0.20 | スマートマネー流入と APY スコアによる上位 10 プール + Claude の配分分析 |
+| `/api/yield/pool` | POST | $0.30 | 特定プールの詳細分析（APY 推移・変動損失リスク・スマートマネー履歴） |
+| `/api/yield/portfolio` | POST | $0.50 | ウォレットのポジション分析 + リバランス提案 |
+| `/api/yield/weekly` | GET | $2.00 | Solana DeFi 週次イールドレポート（約 2000 字） |
+
+**リクエストボディ**
+
+- `POST /api/yield/pool` — `{ "protocol": string, "pool": string }`
+- `POST /api/yield/portfolio` — `{ "walletAddress": string, "riskTolerance": "LOW" | "MEDIUM" | "HIGH" }`
+
+未決済のリクエストには x402 の支払い要件とともに HTTP `402` を返します。
+
+### データソース
+
+| ソース | エンドポイント | 認証 |
+|---|---|---|
+| Nansen Smart Money | `api.nansen.ai/defi/smart-money/positions?chain=solana` | `x-api-key` |
+| Kamino | `api.kamino.finance/strategies` | なし |
+| Drift | `mainnet-beta.api.drift.trade/stats` | なし |
+| Jupiter Price | `price.jup.ag/v6/price` | なし |
+
+各ソースはタイムアウト付きのベストエフォートで取得します。いずれかが到達
+不能でも、厳選したベースラインによりアプリは動作し続けます。
+
+### セットアップ
+
+```bash
+npm install
+cp .env.example .env.local   # 値を入力してください
+npm run build
+npm start                    # 本番
+# または
+npm run dev                  # 開発
+```
+
+### 環境変数
+
+| 変数 | 必須 | 説明 |
+|---|---|---|
+| `NANSEN_API_KEY` | 任意 | スマートマネーのライブデータ用 Nansen API キー |
+| `ANTHROPIC_API_KEY` | 任意 | AI 分析用の Claude API キー |
+| `WALLET_ADDRESS` | **必須** | x402 決済の受取アドレス（Base） |
+| `FACILITATOR_URL` | **必須** | x402 ファシリテーターの URL |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | 任意 | WalletConnect のプロジェクト ID |
+
+`NANSEN_API_KEY` / `ANTHROPIC_API_KEY` がない場合、アプリは厳選した
+ベースラインと決定論的な分析にフォールバックします。`WALLET_ADDRESS` が
+未設定の場合、x402 の `payTo` はゼロアドレスになります。本番公開前に必ず
+設定してください。
+
+### 技術スタック
+
+Next.js 15.5.9 ・ React 19 ・ x402-next 1.2.0 ・ `@anthropic-ai/sdk` ・
+viem ・ wagmi ・ RainbowKit ・ TanStack Query。
+
+### デプロイ
+
+Vercel にデプロイし、プロジェクト設定で `.env.example` のすべての環境変数を
+設定してください。
+
+### 免責事項
+
+本ツールは情報提供のみを目的としています。DeFi への投資にはリスクが伴います。
+投資判断はご自身でお願いします。
