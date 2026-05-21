@@ -80,6 +80,13 @@ The same `/solana`, `/polygon`, `/bnb` sub-routes exist for `pool`,
   `withX402` has no Solana settlement path, and no `bnb`/`bsc` value in its
   `Network` type (BNB is advertised as `eip155:56`).
 
+**Chain selector UI** — the landing page includes a chain/token selector
+(default Solana) that builds the matching endpoint URL live. JPYC is shown
+disabled on Solana, and a banner explains the single-token chains. Wallet
+connection is wired in: RainbowKit for EVM chains and Phantom / Solflare for
+Solana. The Solana providers load as a client-only island (`ssr: false`) so
+page SSR is preserved.
+
 ### Data Sources
 
 | Source | Endpoint | Auth |
@@ -112,6 +119,9 @@ npm run dev                  # development
 | `WALLET_ADDRESS` | **yes** | EVM address that receives x402 payments (Base / Polygon / BNB) |
 | `SOLANA_WALLET_ADDRESS` | **yes** | Solana (base58) address that receives Solana USDC payments |
 | `FACILITATOR_URL` | **yes** | x402 facilitator URL |
+| `HELIUS_RPC_URL` | optional | Solana RPC URL (server-side) |
+| `NEXT_PUBLIC_HELIUS_RPC_URL` | optional | Solana RPC URL for the browser wallet connection (falls back to public mainnet RPC) |
+| `BNB_RPC_URL` | optional | BNB Chain RPC URL |
 | `NEXT_PUBLIC_JPYC_CONTRACT` | optional | JPYC token contract on Polygon (defaults to the canonical address) |
 | `NEXT_PUBLIC_USDT_BNB_CONTRACT` | optional | USDT token contract on BNB Chain |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | optional | WalletConnect project ID |
@@ -123,7 +133,8 @@ x402 `payTo` defaults to the zero address — set it before going live.
 ### Tech Stack
 
 Next.js 15.5.9 · React 19 · x402-next 1.2.0 · `@anthropic-ai/sdk` · viem ·
-wagmi · RainbowKit · TanStack Query.
+wagmi · RainbowKit · TanStack Query · Solana wallet-adapter (Phantom /
+Solflare) · `@solana/web3.js`.
 
 ### Deployment
 
@@ -210,6 +221,14 @@ Solana・Base・Polygon・BNB Chain のマルチチェーン決済に対応し�
   1.2.0 の `withX402` には Solana の決済経路がなく、`Network` 型に
   `bnb`/`bsc` も存在しないためです（BNB は `eip155:56` として通知）。
 
+**チェーンセレクター UI** — ランディングページにはチェーン／トークンの
+セレクター（デフォルト Solana）があり、選択に応じたエンドポイント URL を
+リアルタイムで生成します。Solana では JPYC タブが無効表示になり、単一
+トークンのチェーンにはバナーが表示されます。ウォレット接続も実装済みで、
+EVM は RainbowKit、Solana は Phantom／Solflare に対応します。Solana の
+プロバイダーはクライアント専用アイランド（`ssr: false`）として読み込まれ、
+ページの SSR を維持します。
+
 ### データソース
 
 | ソース | エンドポイント | 認証 |
@@ -242,6 +261,9 @@ npm run dev                  # 開発
 | `WALLET_ADDRESS` | **必須** | x402 決済の受取 EVM アドレス（Base / Polygon / BNB） |
 | `SOLANA_WALLET_ADDRESS` | **必須** | Solana USDC 決済の受取アドレス（base58） |
 | `FACILITATOR_URL` | **必須** | x402 ファシリテーターの URL |
+| `HELIUS_RPC_URL` | 任意 | Solana RPC URL（サーバー側） |
+| `NEXT_PUBLIC_HELIUS_RPC_URL` | 任意 | ブラウザのウォレット接続用 Solana RPC URL（未設定時は公開メインネット RPC） |
+| `BNB_RPC_URL` | 任意 | BNB Chain の RPC URL |
 | `NEXT_PUBLIC_JPYC_CONTRACT` | 任意 | Polygon の JPYC トークンコントラクト（既定値は正規アドレス） |
 | `NEXT_PUBLIC_USDT_BNB_CONTRACT` | 任意 | BNB Chain の USDT トークンコントラクト |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | 任意 | WalletConnect のプロジェクト ID |
@@ -254,7 +276,8 @@ npm run dev                  # 開発
 ### 技術スタック
 
 Next.js 15.5.9 ・ React 19 ・ x402-next 1.2.0 ・ `@anthropic-ai/sdk` ・
-viem ・ wagmi ・ RainbowKit ・ TanStack Query。
+viem ・ wagmi ・ RainbowKit ・ TanStack Query ・ Solana wallet-adapter
+（Phantom／Solflare）・ `@solana/web3.js`。
 
 ### デプロイ
 
