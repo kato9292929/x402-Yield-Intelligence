@@ -1,8 +1,8 @@
 import type { FacilitatorConfig } from "x402/types";
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const DEFAULT_PAY_TO = "0xC67d94504696960bA0f2e7C3FeE703950734c00A";
 
-export const PAY_TO = (process.env.WALLET_ADDRESS ?? ZERO_ADDRESS) as `0x${string}`;
+export const PAY_TO = (process.env.WALLET_ADDRESS ?? DEFAULT_PAY_TO) as `0x${string}`;
 
 const facilitatorUrl = process.env.FACILITATOR_URL;
 

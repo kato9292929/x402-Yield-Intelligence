@@ -83,7 +83,7 @@ export function bnbPaymentRequired(
   return paymentRequired(
     "eip155:56",
     USDT_BNB,
-    process.env.WALLET_ADDRESS ?? "",
+    process.env.WALLET_ADDRESS ?? "0xC67d94504696960bA0f2e7C3FeE703950734c00A",
     req,
     maxAmountRequired,
     description,
