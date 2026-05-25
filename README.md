@@ -74,11 +74,13 @@ The same `/solana`, `/polygon`, `/bnb` sub-routes exist for `pool`,
 | Polygon | JPYC | `0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB` |
 | BNB Chain | USDT | `0x55d398326f99059fF775485246999027B3197955` |
 
-- **Polygon JPYC** — append `?token=jpyc` to a Polygon sub-route to be
-  quoted in JPYC instead of USDC (e.g. `/api/yield/scan/polygon?token=jpyc`).
-- **Solana & BNB Chain** use a manual `402` response: x402-next 1.2.0's
-  `withX402` has no Solana settlement path, and no `bnb`/`bsc` value in its
-  `Network` type (BNB is advertised as `eip155:56`).
+- **Polygon JPYC** — Polygon routes advertise both USDC and JPYC as
+  `accepts` options in their v2 402 response; the client picks which to
+  settle in (no query-param needed).
+- **Solana & BNB Chain** use a manual `402` response: `@x402/svm` is not
+  installed, and neither the CDP nor the community facilitator settles
+  BNB Chain (chain ID 56). Clients receive a v1-shaped 402 with payment
+  instructions but the server does not verify settlement.
 
 **Chain selector UI** — the landing page includes a chain/token selector
 (default Solana) that builds the matching endpoint URL live. JPYC is shown
@@ -116,9 +118,11 @@ npm run dev                  # development
 |---|---|---|
 | `NANSEN_API_KEY` | optional | Nansen API key for live smart-money data |
 | `ANTHROPIC_API_KEY` | optional | Claude API key for AI analysis |
-| `WALLET_ADDRESS` | **yes** | EVM address that receives x402 payments (Base / Polygon / BNB) |
-| `SOLANA_WALLET_ADDRESS` | **yes** | Solana (base58) address that receives Solana USDC payments |
-| `FACILITATOR_URL` | **yes** | x402 facilitator URL |
+| `WALLET_ADDRESS` | optional | EVM address that receives x402 payments (Base / Polygon / BNB). Defaults to the bundled production wallet `0xC67d…00A` |
+| `SOLANA_WALLET_ADDRESS` | **yes** (Solana) | Solana (base58) address that receives Solana USDC payments |
+| `CDP_API_KEY_ID` | **yes** (production) | Coinbase Developer Platform API key ID — required to authenticate against the CDP facilitator |
+| `CDP_API_KEY_SECRET` | **yes** (production) | Coinbase Developer Platform API key secret |
+| `FACILITATOR_URL` | optional | x402 facilitator URL. When `CDP_API_KEY_ID` + `CDP_API_KEY_SECRET` are set, defaults to `https://api.cdp.coinbase.com/platform/v2/x402` (Coinbase CDP). Otherwise defaults to the community facilitator `https://x402.org/facilitator` |
 | `HELIUS_RPC_URL` | optional | Solana RPC URL (server-side) |
 | `NEXT_PUBLIC_HELIUS_RPC_URL` | optional | Solana RPC URL for the browser wallet connection (falls back to public mainnet RPC) |
 | `BNB_RPC_URL` | optional | BNB Chain RPC URL |
@@ -128,11 +132,15 @@ npm run dev                  # development
 
 Without `NANSEN_API_KEY` / `ANTHROPIC_API_KEY` the app falls back to a
 curated baseline and deterministic analysis. Without `WALLET_ADDRESS` the
-x402 `payTo` defaults to the zero address — set it before going live.
+x402 `payTo` defaults to the bundled production wallet. Without
+`CDP_API_KEY_ID` / `CDP_API_KEY_SECRET` the app talks to the community
+facilitator at `x402.org/facilitator`; set both to use the production-SLA
+Coinbase CDP facilitator with gas sponsorship.
 
 ### Tech Stack
 
-Next.js 15.5.9 · React 19 · x402-next 1.2.0 · `@anthropic-ai/sdk` · viem ·
+Next.js 15.5.9 · React 19 · `@x402/next` 2.13 · `@x402/core` · `@x402/evm`
+· `@coinbase/x402` · `@anthropic-ai/sdk` · viem ·
 wagmi · RainbowKit · TanStack Query · Solana wallet-adapter (Phantom /
 Solflare) · `@solana/web3.js`.
 
@@ -215,11 +223,13 @@ Solana・Base・Polygon・BNB Chain のマルチチェーン決済に対応し�
 | Polygon | JPYC | `0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB` |
 | BNB Chain | USDT | `0x55d398326f99059fF775485246999027B3197955` |
 
-- **Polygon JPYC** — Polygon のサブルートに `?token=jpyc` を付けると、USDC
-  ではなく JPYC で見積もられます（例: `/api/yield/scan/polygon?token=jpyc`）。
-- **Solana・BNB Chain** は手動 `402` レスポンスを使用します。x402-next
-  1.2.0 の `withX402` には Solana の決済経路がなく、`Network` 型に
-  `bnb`/`bsc` も存在しないためです（BNB は `eip155:56` として通知）。
+- **Polygon JPYC** — Polygon のルートは v2 の `accepts` に USDC と JPYC
+  の両方を含めて 402 を返すため、クライアント側で決済通貨を選択します
+  （クエリパラメータでの切替は不要）。
+- **Solana・BNB Chain** は手動 `402` レスポンスを使用します。`@x402/svm`
+  は未導入で、CDP / コミュニティのいずれの facilitator も BNB Chain
+  (chain ID 56) を決済対象としないためです。クライアントは v1 形式の
+  402 を受け取りますが、サーバー側では支払い検証を行いません。
 
 **チェーンセレクター UI** — ランディングページにはチェーン／トークンの
 セレクター（デフォルト Solana）があり、選択に応じたエンドポイント URL を
@@ -258,9 +268,11 @@ npm run dev                  # 開発
 |---|---|---|
 | `NANSEN_API_KEY` | 任意 | スマートマネーのライブデータ用 Nansen API キー |
 | `ANTHROPIC_API_KEY` | 任意 | AI 分析用の Claude API キー |
-| `WALLET_ADDRESS` | **必須** | x402 決済の受取 EVM アドレス（Base / Polygon / BNB） |
-| `SOLANA_WALLET_ADDRESS` | **必須** | Solana USDC 決済の受取アドレス（base58） |
-| `FACILITATOR_URL` | **必須** | x402 ファシリテーターの URL |
+| `WALLET_ADDRESS` | 任意 | x402 決済の受取 EVM アドレス（Base / Polygon / BNB）。未設定時はバンドル済みの本番ウォレット `0xC67d…00A` を使用 |
+| `SOLANA_WALLET_ADDRESS` | **必須**（Solana 利用時） | Solana USDC 決済の受取アドレス（base58） |
+| `CDP_API_KEY_ID` | **必須**（本番） | Coinbase Developer Platform の API キー ID（CDP facilitator 認証用） |
+| `CDP_API_KEY_SECRET` | **必須**（本番） | Coinbase Developer Platform の API キーシークレット |
+| `FACILITATOR_URL` | 任意 | x402 facilitator の URL。`CDP_API_KEY_ID` と `CDP_API_KEY_SECRET` が設定されている場合は `https://api.cdp.coinbase.com/platform/v2/x402`（Coinbase CDP）、未設定時はコミュニティ facilitator `https://x402.org/facilitator` |
 | `HELIUS_RPC_URL` | 任意 | Solana RPC URL（サーバー側） |
 | `NEXT_PUBLIC_HELIUS_RPC_URL` | 任意 | ブラウザのウォレット接続用 Solana RPC URL（未設定時は公開メインネット RPC） |
 | `BNB_RPC_URL` | 任意 | BNB Chain の RPC URL |
@@ -269,13 +281,16 @@ npm run dev                  # 開発
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | 任意 | WalletConnect のプロジェクト ID |
 
 `NANSEN_API_KEY` / `ANTHROPIC_API_KEY` がない場合、アプリは厳選した
-ベースラインと決定論的な分析にフォールバックします。`WALLET_ADDRESS` が
-未設定の場合、x402 の `payTo` はゼロアドレスになります。本番公開前に必ず
-設定してください。
+ベースラインと決定論的な分析にフォールバックします。`WALLET_ADDRESS` を
+未設定にすると `payTo` はバンドル済みの本番ウォレットになります。
+`CDP_API_KEY_ID` / `CDP_API_KEY_SECRET` を設定すると Coinbase CDP の
+本番 SLA + ガススポンサー対応 facilitator を、未設定時はコミュニティの
+`x402.org/facilitator` を使用します。
 
 ### 技術スタック
 
-Next.js 15.5.9 ・ React 19 ・ x402-next 1.2.0 ・ `@anthropic-ai/sdk` ・
+Next.js 15.5.9 ・ React 19 ・ `@x402/next` 2.13 ・ `@x402/core` ・
+`@x402/evm` ・ `@coinbase/x402` ・ `@anthropic-ai/sdk` ・
 viem ・ wagmi ・ RainbowKit ・ TanStack Query ・ Solana wallet-adapter
 （Phantom／Solflare）・ `@solana/web3.js`。
 

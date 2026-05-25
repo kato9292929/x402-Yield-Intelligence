@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withX402 } from "x402-next";
+import { withX402 } from "@x402/next";
 import { analyzePortfolio } from "@/lib/intelligence";
 import type { RiskTolerance } from "@/lib/types";
-import { FACILITATOR, PAY_TO } from "@/lib/x402";
+import { BASE_NETWORK, PAY_TO, x402Server } from "@/lib/x402";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -48,11 +48,14 @@ const handler = async (request: NextRequest): Promise<NextResponse> => {
 
 export const POST = withX402(
   handler,
-  PAY_TO,
   {
-    price: "$0.50",
-    network: "base",
-    config: { description: "Solana DeFi Portfolio Rebalancing Analysis" },
+    accepts: {
+      scheme: "exact",
+      payTo: PAY_TO,
+      price: "$0.50",
+      network: BASE_NETWORK,
+    },
+    description: "Solana DeFi Portfolio Rebalancing Analysis",
   },
-  FACILITATOR,
+  x402Server,
 );
