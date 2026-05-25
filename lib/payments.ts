@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { RouteConfig } from "x402/types";
+import type { RouteConfig } from "@x402/next";
+import type { PaymentOption } from "@x402/core/http";
+import { POLYGON_NETWORK } from "@/lib/x402";
 
 export const SOLANA_USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 export const USDT_BNB = "0x55d398326f99059fF775485246999027B3197955";
@@ -55,7 +57,11 @@ function paymentRequired(
   );
 }
 
-/** Manual x402 402 response for Solana USDC (withX402 is not used for Solana). */
+/**
+ * Manual x402 402 response for Solana USDC. The v2 @x402/svm package would
+ * support this natively, but it is not installed; clients still receive a
+ * v1-shaped 402 with payment instructions.
+ */
 export function solanaPaymentRequired(
   req: NextRequest,
   maxAmountRequired: string,
@@ -72,8 +78,9 @@ export function solanaPaymentRequired(
 }
 
 /**
- * Manual x402 402 response for BNB Chain USDT. withX402 cannot be used here
- * because x402-next 1.2.0 has no "bnb"/"bsc" network in its Network type.
+ * Manual x402 402 response for BNB Chain USDT. Neither the community
+ * (x402.org) nor the CDP facilitator settles BNB, so payment verification
+ * remains manual.
  */
 export function bnbPaymentRequired(
   req: NextRequest,
@@ -95,36 +102,36 @@ function isValidEvmAddress(addr: string): boolean {
 }
 
 /**
- * Resolves the withX402 route config for Polygon. `?token=jpyc` switches the
- * accepted asset from native USDC to JPYC; any other value uses USDC.
- *
- * If NEXT_PUBLIC_JPYC_CONTRACT is not a valid 20-byte address the JPYC
- * branch falls back to USDC so the route never fails at runtime.
+ * Build a v2 RouteConfig that accepts either native USDC (preferred) or JPYC
+ * on Polygon. Clients pick the option they want to settle in. If
+ * NEXT_PUBLIC_JPYC_CONTRACT is not a 20-byte address the JPYC option is
+ * omitted so the route still serves USDC.
  */
-export async function polygonRouteConfig(
-  req: NextRequest,
+export function polygonRouteConfig(
   usdcPrice: string,
   jpycAtomicAmount: string,
   description: string,
-): Promise<RouteConfig> {
-  const token = new URL(req.url).searchParams.get("token")?.toLowerCase();
-  if (token === "jpyc" && isValidEvmAddress(JPYC_POLYGON)) {
-    return {
+  payTo: `0x${string}`,
+): RouteConfig {
+  const accepts: PaymentOption[] = [
+    {
+      scheme: "exact",
+      payTo,
+      price: usdcPrice,
+      network: POLYGON_NETWORK,
+    },
+  ];
+  if (isValidEvmAddress(JPYC_POLYGON)) {
+    accepts.push({
+      scheme: "exact",
+      payTo,
       price: {
+        asset: JPYC_POLYGON,
         amount: jpycAtomicAmount,
-        asset: {
-          address: JPYC_POLYGON,
-          decimals: 18,
-          eip712: { name: "JPYC", version: "1" },
-        },
+        extra: { name: "JPYC", version: "1" },
       },
-      network: "polygon",
-      config: { description: `${description} (JPYC)` },
-    };
+      network: POLYGON_NETWORK,
+    });
   }
-  return {
-    price: usdcPrice,
-    network: "polygon",
-    config: { description },
-  };
+  return { accepts, description };
 }
