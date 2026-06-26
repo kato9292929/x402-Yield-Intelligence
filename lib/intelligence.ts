@@ -52,7 +52,7 @@ function confidenceFor(pools: Pool[]): number {
 
 /** Builds the scan payload for GET /api/yield/scan. */
 export async function buildScan(): Promise<ScanResult> {
-  const { pools, liveSources } = await getScoredPools();
+  const { pools, liveSources, apyResolved } = await getScoredPools();
   const topPools = pools.slice(0, 10);
   const top = topPools[0];
 
@@ -84,6 +84,7 @@ export async function buildScan(): Promise<ScanResult> {
       smartMoneyPools,
       totalTrackedTvl,
       poolsScanned: pools.length,
+      apyResolved,
     },
     liveSources,
   };
@@ -141,6 +142,7 @@ export async function analyzePool(
       protocol,
       pool,
       apy: 0.08,
+      apySource: "static",
       smartMoneyInflow7d: 500_000,
       smartMoneyWallets: 6,
       riskScore: 0.35,
