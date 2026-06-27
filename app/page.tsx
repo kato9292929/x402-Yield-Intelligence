@@ -106,9 +106,9 @@ export default async function Home() {
             </div>
             <div className="pool-metrics">
               <div>
-                <div className="metric-label">スマートマネー流入 (7d)</div>
+                <div className="metric-label">スマートマネー保有 (構成トークン)</div>
                 <div className="metric-value flow">
-                  {usd(p.smartMoneyInflow7d)}
+                  {usd(p.smartMoneyUsd)}
                 </div>
               </div>
               <div>

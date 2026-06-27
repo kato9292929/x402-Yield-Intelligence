@@ -10,12 +10,23 @@ export type RiskTolerance = "LOW" | "MEDIUM" | "HIGH";
  */
 export type ApySource = "live" | "static";
 
+/**
+ * Provenance of a pool's smart-money figures. "live" means smartMoneyUsd /
+ * smartMoneyWallets were resolved from Nansen Smart Money holdings; "static"
+ * means they are the BASE_POOLS constant baseline (no key, API/auth failure, or
+ * no matching token). Callers must not treat "static" as a live signal.
+ */
+export type SmartMoneySource = "live" | "static";
+
 export interface Pool {
   protocol: string;
   pool: string;
   apy: number;
   apySource: ApySource;
-  smartMoneyInflow7d: number;
+  // USD value of this pool's constituent tokens currently held by Nansen smart
+  // money. Token-level (not pool-level): pools sharing a token share this value.
+  smartMoneyUsd: number;
+  smartMoneySource: SmartMoneySource;
   smartMoneyWallets: number;
   riskScore: number;
   yieldScore: number;
@@ -39,6 +50,9 @@ export interface ScanResult {
     // Number of pools whose apy was resolved to a live API value (apySource
     // "live"). The rest are on the BASE_POOLS constant baseline.
     apyResolved: number;
+    // Number of pools whose smart-money figures were resolved from live Nansen
+    // holdings (smartMoneySource "live"). The rest are on the constant baseline.
+    smartMoneyResolved: number;
   };
   liveSources: string[];
 }

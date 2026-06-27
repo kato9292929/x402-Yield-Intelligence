@@ -52,7 +52,8 @@ function confidenceFor(pools: Pool[]): number {
 
 /** Builds the scan payload for GET /api/yield/scan. */
 export async function buildScan(): Promise<ScanResult> {
-  const { pools, liveSources, apyResolved } = await getScoredPools();
+  const { pools, liveSources, apyResolved, smartMoneyResolved } =
+    await getScoredPools();
   const topPools = pools.slice(0, 10);
   const top = topPools[0];
 
@@ -60,13 +61,13 @@ export async function buildScan(): Promise<ScanResult> {
   const confidence = confidenceFor(topPools);
 
   const fallbackAnalysis = {
-    topOpportunity: `${top.protocol} ${top.pool} pool showing ${top.smartMoneyWallets} smart money wallets entering in 7 days`,
+    topOpportunity: `${top.protocol} ${top.pool} pool: ${top.smartMoneyWallets} smart-money wallets hold its tokens`,
     marketRegime,
     confidence,
   };
 
   const analysis = await askClaudeJSON<typeof fallbackAnalysis>(
-    "You are a Solana DeFi yield strategist. Analyze smart-money positioning across lending and LP pools. Be concise and data-grounded.",
+    "You are a Solana DeFi yield strategist. Smart-money figures are token-level Nansen holdings mapped onto each pool's constituent tokens, not pool-level flows. Be concise and data-grounded.",
     `Top pools (JSON):\n${JSON.stringify(topPools, null, 2)}\n\nReturn JSON with keys: topOpportunity (one English sentence), marketRegime (one of RISK_ON, NEUTRAL, RISK_OFF), confidence (0-1 number).`,
     fallbackAnalysis,
   );
@@ -85,6 +86,7 @@ export async function buildScan(): Promise<ScanResult> {
       totalTrackedTvl,
       poolsScanned: pools.length,
       apyResolved,
+      smartMoneyResolved,
     },
     liveSources,
   };
@@ -120,10 +122,12 @@ export interface PoolAnalysis {
     estimatedDrawdownPct: number;
     note: string;
   };
+  // NOTE: a synthetic illustrative trend derived from the current smart-money
+  // holdings figure — Nansen is not queried per-week here. Not live history.
   smartMoneyHistory: {
     date: string;
     wallets: number;
-    netInflowUsd: number;
+    holdingUsd: number;
   }[];
   analysis: string;
   matched: boolean;
@@ -143,7 +147,8 @@ export async function analyzePool(
       pool,
       apy: 0.08,
       apySource: "static",
-      smartMoneyInflow7d: 500_000,
+      smartMoneyUsd: 500_000,
+      smartMoneySource: "static",
       smartMoneyWallets: 6,
       riskScore: 0.35,
       yieldScore: 0.4,
@@ -183,15 +188,15 @@ export async function analyzePool(
     return {
       date: isoDaysAgo((3 - i) * 7),
       wallets: Math.max(1, Math.round(base.smartMoneyWallets * factor)),
-      netInflowUsd: Math.round(base.smartMoneyInflow7d * factor),
+      holdingUsd: Math.round(base.smartMoneyUsd * factor),
     };
   });
 
-  const fallback = `${base.protocol} ${base.pool} は現在APY ${(base.apy * 100).toFixed(2)}%、直近7日で${base.smartMoneyWallets}件のスマートマネーウォレットが約$${base.smartMoneyInflow7d.toLocaleString()}を入金しています。リスクスコアは${base.riskScore.toFixed(2)}で、変動損失リスクは${ilRisk.level}。総合判定は${base.recommendation}です。${
+  const fallback = `${base.protocol} ${base.pool} は現在APY ${(base.apy * 100).toFixed(2)}%、構成トークンを${base.smartMoneyWallets}件のスマートマネーウォレットが約$${base.smartMoneyUsd.toLocaleString()}相当保有しています。リスクスコアは${base.riskScore.toFixed(2)}で、変動損失リスクは${ilRisk.level}。総合判定は${base.recommendation}です。${
     base.recommendation === "HIGH_CONVICTION"
-      ? "スマートマネーの継続的な流入とAPYの安定性が確認でき、エントリー妙味があります。"
+      ? "スマートマネーの保有とAPYの安定性が確認でき、エントリー妙味があります。"
       : base.recommendation === "MODERATE"
-        ? "一定の資金流入は見られますが、ポジションサイズは抑えめが妥当です。"
+        ? "一定のスマートマネー保有は見られますが、ポジションサイズは抑えめが妥当です。"
         : "現時点では明確なシグナルが乏しく、監視継続を推奨します。"
   }`;
 
@@ -391,16 +396,16 @@ function buildWeeklyFallback(top: Pool[], regime: MarketRegime): string {
   const lead = top[0];
   const second = top[1] ?? top[0];
   const third = top[2] ?? top[0];
-  const totalInflow = top.reduce((s, p) => s + p.smartMoneyInflow7d, 0);
+  const totalHoldings = top.reduce((s, p) => s + p.smartMoneyUsd, 0);
 
   return [
     `【Solana DeFi 週次イールド・インテリジェンス｜${isoDaysAgo(0)}】`,
     "",
     `1. 市場概況`,
-    `今週のSolana DeFi市場はレジーム判定で「${regimeJa}」となりました。Kamino・Drift・Jupiter Lend・Marinade・Jitoの主要5プロトコルを横断的にスキャンした結果、上位プールには合計で約$${totalInflow.toLocaleString()}のスマートマネー資金が直近7日間で流入しています。ステーキング系のJitoSOL・mSOLが厚いTVLで地合いを支える一方、レンディングおよびLP市場では利回りを求めた資金移動が活発化しました。ベースとなるSOLステーキング利回りが地相場を形成するなか、リスク調整後リターンで優位なプールへ資金が選別的に向かっている点が今週の特徴です。`,
+    `今週のSolana DeFi市場はレジーム判定で「${regimeJa}」となりました。Kamino・Drift・Jupiter Lend・Marinade・Jitoの主要5プロトコルを横断的にスキャンした結果、上位プールの構成トークンには合計で約$${totalHoldings.toLocaleString()}相当のスマートマネー保有が観測されています(Nansenのトークン単位保有を各プールの構成トークンに対応づけたもの)。ステーキング系のJitoSOL・mSOLが厚いTVLで地合いを支える一方、レンディングおよびLP市場では利回りを求めた資金移動が活発化しました。ベースとなるSOLステーキング利回りが地相場を形成するなか、リスク調整後リターンで優位なプールへ資金が選別的に向かっている点が今週の特徴です。`,
     "",
     `2. スマートマネーの動向`,
-    `Nansenが追跡するスマートマネーウォレットの動きを見ると、最も強いシグナルは${lead.protocol} ${lead.pool}で観測されました。直近7日で${lead.smartMoneyWallets}件のウォレットが約$${lead.smartMoneyInflow7d.toLocaleString()}を入金し、利回りスコアは${lead.yieldScore}に達しています。続く${second.protocol} ${second.pool}にも${second.smartMoneyWallets}ウォレットが流入し、安定したレンディング需要を裏付けました。資金の方向性はステーブルコイン建てのレンディングとデルタニュートラル戦略に集中しており、価格変動エクスポージャーを抑えつつ利回りを確保する姿勢が鮮明です。`,
+    `Nansenが追跡するスマートマネーの保有を見ると、最も強いシグナルは${lead.protocol} ${lead.pool}の構成トークンで観測されました。${lead.smartMoneyWallets}件のスマートマネーウォレットが約$${lead.smartMoneyUsd.toLocaleString()}相当を保有し、利回りスコアは${lead.yieldScore}に達しています。続く${second.protocol} ${second.pool}の構成トークンにも${second.smartMoneyWallets}ウォレットの保有が見られ、安定したレンディング需要を裏付けました。なおスマートマネーの値はトークン単位の保有であり、同じトークンを使うプールは同値になります(プール単位の流入ではありません)。資金の方向性はステーブルコイン建てのレンディングとデルタニュートラル戦略に集中しており、価格変動エクスポージャーを抑えつつ利回りを確保する姿勢が鮮明です。`,
     "",
     `3. 注目プール`,
     `(a) ${lead.protocol} ${lead.pool} — APY ${(lead.apy * 100).toFixed(2)}%、リスクスコア${lead.riskScore}。判定は${lead.recommendation}。スマートマネーの継続流入が最も強く、今週の本命です。`,

@@ -1,17 +1,25 @@
-import type { ApySource, Pool, Recommendation } from "./types";
+import type { ApySource, Pool, Recommendation, SmartMoneySource } from "./types";
 
 interface BasePool {
   protocol: string;
   pool: string;
   apy: number;
-  smartMoneyInflow7d: number;
+  // Baseline smart-money USD holdings (constant fallback). Overwritten with live
+  // Nansen holdings when the pool's tokens resolve.
+  smartMoneyUsd: number;
   smartMoneyWallets: number;
   riskScore: number;
   tvl: number;
+  // Constituent token symbols of the pool, used to look up Nansen holdings
+  // (which are token-level, not pool-level).
+  tokens: string[];
 }
 
-/** A BasePool after the APY overlay has tagged where its apy came from. */
-type EnrichedPool = BasePool & { apySource: ApySource };
+/** A BasePool after the smart-money overlay has tagged where its figures came from. */
+type SmartMoneyTagged = BasePool & { smartMoneySource: SmartMoneySource };
+
+/** A pool after both the smart-money and APY overlays have tagged provenance. */
+type EnrichedPool = SmartMoneyTagged & { apySource: ApySource };
 
 /**
  * Curated baseline of liquid Solana DeFi pools across the five tracked
@@ -19,20 +27,20 @@ type EnrichedPool = BasePool & { apySource: ApySource };
  * baseline guarantees the product stays functional without external keys.
  */
 const BASE_POOLS: BasePool[] = [
-  { protocol: "Kamino", pool: "USDC-SOL", apy: 0.124, smartMoneyInflow7d: 2_400_000, smartMoneyWallets: 18, riskScore: 0.3, tvl: 41_200_000 },
-  { protocol: "Kamino", pool: "USDC Lend", apy: 0.091, smartMoneyInflow7d: 3_100_000, smartMoneyWallets: 22, riskScore: 0.12, tvl: 130_400_000 },
-  { protocol: "Kamino", pool: "JitoSOL-SOL", apy: 0.078, smartMoneyInflow7d: 1_350_000, smartMoneyWallets: 12, riskScore: 0.18, tvl: 88_500_000 },
-  { protocol: "Kamino", pool: "PYUSD-USDC", apy: 0.143, smartMoneyInflow7d: 640_000, smartMoneyWallets: 6, riskScore: 0.34, tvl: 9_800_000 },
-  { protocol: "Drift", pool: "JLP Delta-Neutral", apy: 0.187, smartMoneyInflow7d: 2_750_000, smartMoneyWallets: 16, riskScore: 0.48, tvl: 31_900_000 },
-  { protocol: "Drift", pool: "SOL-PERP MM Vault", apy: 0.213, smartMoneyInflow7d: 1_900_000, smartMoneyWallets: 14, riskScore: 0.62, tvl: 22_700_000 },
-  { protocol: "Drift", pool: "USDC Insurance Fund", apy: 0.066, smartMoneyInflow7d: 480_000, smartMoneyWallets: 7, riskScore: 0.22, tvl: 54_300_000 },
-  { protocol: "Jupiter Lend", pool: "USDC", apy: 0.102, smartMoneyInflow7d: 4_200_000, smartMoneyWallets: 27, riskScore: 0.14, tvl: 96_100_000 },
-  { protocol: "Jupiter Lend", pool: "USDT", apy: 0.097, smartMoneyInflow7d: 1_120_000, smartMoneyWallets: 11, riskScore: 0.16, tvl: 38_400_000 },
-  { protocol: "Jupiter Lend", pool: "SOL", apy: 0.054, smartMoneyInflow7d: 910_000, smartMoneyWallets: 9, riskScore: 0.2, tvl: 47_600_000 },
-  { protocol: "Marinade", pool: "mSOL Native Stake", apy: 0.072, smartMoneyInflow7d: 1_640_000, smartMoneyWallets: 13, riskScore: 0.1, tvl: 1_180_000_000 },
-  { protocol: "Marinade", pool: "mSOL-SOL LP", apy: 0.069, smartMoneyInflow7d: 520_000, smartMoneyWallets: 5, riskScore: 0.15, tvl: 28_900_000 },
-  { protocol: "Jito", pool: "JitoSOL Stake", apy: 0.081, smartMoneyInflow7d: 3_480_000, smartMoneyWallets: 24, riskScore: 0.09, tvl: 1_640_000_000 },
-  { protocol: "Jito", pool: "JitoSOL-USDC LP", apy: 0.116, smartMoneyInflow7d: 1_280_000, smartMoneyWallets: 10, riskScore: 0.27, tvl: 17_500_000 },
+  { protocol: "Kamino", pool: "USDC-SOL", apy: 0.124, smartMoneyUsd: 2_400_000, smartMoneyWallets: 18, riskScore: 0.3, tvl: 41_200_000, tokens: ["USDC", "SOL"] },
+  { protocol: "Kamino", pool: "USDC Lend", apy: 0.091, smartMoneyUsd: 3_100_000, smartMoneyWallets: 22, riskScore: 0.12, tvl: 130_400_000, tokens: ["USDC"] },
+  { protocol: "Kamino", pool: "JitoSOL-SOL", apy: 0.078, smartMoneyUsd: 1_350_000, smartMoneyWallets: 12, riskScore: 0.18, tvl: 88_500_000, tokens: ["JitoSOL", "SOL"] },
+  { protocol: "Kamino", pool: "PYUSD-USDC", apy: 0.143, smartMoneyUsd: 640_000, smartMoneyWallets: 6, riskScore: 0.34, tvl: 9_800_000, tokens: ["PYUSD", "USDC"] },
+  { protocol: "Drift", pool: "JLP Delta-Neutral", apy: 0.187, smartMoneyUsd: 2_750_000, smartMoneyWallets: 16, riskScore: 0.48, tvl: 31_900_000, tokens: ["JLP"] },
+  { protocol: "Drift", pool: "SOL-PERP MM Vault", apy: 0.213, smartMoneyUsd: 1_900_000, smartMoneyWallets: 14, riskScore: 0.62, tvl: 22_700_000, tokens: ["SOL"] },
+  { protocol: "Drift", pool: "USDC Insurance Fund", apy: 0.066, smartMoneyUsd: 480_000, smartMoneyWallets: 7, riskScore: 0.22, tvl: 54_300_000, tokens: ["USDC"] },
+  { protocol: "Jupiter Lend", pool: "USDC", apy: 0.102, smartMoneyUsd: 4_200_000, smartMoneyWallets: 27, riskScore: 0.14, tvl: 96_100_000, tokens: ["USDC"] },
+  { protocol: "Jupiter Lend", pool: "USDT", apy: 0.097, smartMoneyUsd: 1_120_000, smartMoneyWallets: 11, riskScore: 0.16, tvl: 38_400_000, tokens: ["USDT"] },
+  { protocol: "Jupiter Lend", pool: "SOL", apy: 0.054, smartMoneyUsd: 910_000, smartMoneyWallets: 9, riskScore: 0.2, tvl: 47_600_000, tokens: ["SOL"] },
+  { protocol: "Marinade", pool: "mSOL Native Stake", apy: 0.072, smartMoneyUsd: 1_640_000, smartMoneyWallets: 13, riskScore: 0.1, tvl: 1_180_000_000, tokens: ["mSOL"] },
+  { protocol: "Marinade", pool: "mSOL-SOL LP", apy: 0.069, smartMoneyUsd: 520_000, smartMoneyWallets: 5, riskScore: 0.15, tvl: 28_900_000, tokens: ["mSOL", "SOL"] },
+  { protocol: "Jito", pool: "JitoSOL Stake", apy: 0.081, smartMoneyUsd: 3_480_000, smartMoneyWallets: 24, riskScore: 0.09, tvl: 1_640_000_000, tokens: ["JitoSOL"] },
+  { protocol: "Jito", pool: "JitoSOL-USDC LP", apy: 0.116, smartMoneyUsd: 1_280_000, smartMoneyWallets: 10, riskScore: 0.27, tvl: 17_500_000, tokens: ["JitoSOL", "USDC"] },
 ];
 
 function clamp(n: number, lo: number, hi: number): number {
@@ -46,7 +54,10 @@ function round(n: number, decimals = 2): number {
 
 function scorePool(b: EnrichedPool): Pool {
   const apyNorm = clamp(b.apy / 0.22, 0, 1);
-  const inflowNorm = clamp(b.smartMoneyInflow7d / 4_500_000, 0, 1);
+  // TODO: the divisor was tuned for the (smaller) baseline inflow constants;
+  // live Nansen holdings value_usd can be far larger and may saturate this.
+  // Revisit the scale once live magnitudes are observed.
+  const inflowNorm = clamp(b.smartMoneyUsd / 4_500_000, 0, 1);
   const walletNorm = clamp(b.smartMoneyWallets / 28, 0, 1);
   const raw = 0.38 * inflowNorm + 0.24 * walletNorm + 0.38 * apyNorm;
   const yieldScore = round(clamp(raw - b.riskScore * 0.12, 0, 1));
@@ -63,7 +74,8 @@ function scorePool(b: EnrichedPool): Pool {
     pool: b.pool,
     apy: b.apy,
     apySource: b.apySource,
-    smartMoneyInflow7d: b.smartMoneyInflow7d,
+    smartMoneyUsd: b.smartMoneyUsd,
+    smartMoneySource: b.smartMoneySource,
     smartMoneyWallets: b.smartMoneyWallets,
     riskScore: b.riskScore,
     yieldScore,
@@ -92,44 +104,169 @@ async function safeJson(url: string, init?: RequestInit): Promise<unknown> {
   }
 }
 
-/**
- * Best-effort overlay of Nansen smart-money positions onto the baseline.
- * Any unexpected payload shape is ignored so the scan never fails.
- */
-function overlaySmartMoney(pools: BasePool[], nansen: unknown): BasePool[] {
-  if (!nansen || typeof nansen !== "object") return pools;
-  const rows = Array.isArray(nansen)
-    ? nansen
-    : Array.isArray((nansen as { positions?: unknown }).positions)
-      ? ((nansen as { positions: unknown[] }).positions)
-      : null;
-  if (!rows) return pools;
+const NANSEN_HOLDINGS_URL = "https://api.nansen.ai/api/v1/smart-money/holdings";
 
-  const byProtocol = new Map<string, { inflow: number; wallets: number }>();
-  for (const row of rows) {
-    if (!row || typeof row !== "object") continue;
-    const r = row as Record<string, unknown>;
-    const protocol = typeof r.protocol === "string" ? r.protocol : null;
-    if (!protocol) continue;
-    const inflow = typeof r.netInflowUsd === "number" ? r.netInflowUsd : 0;
-    const wallets = typeof r.walletCount === "number" ? r.walletCount : 0;
-    const prev = byProtocol.get(protocol.toLowerCase()) ?? { inflow: 0, wallets: 0 };
-    byProtocol.set(protocol.toLowerCase(), {
-      inflow: prev.inflow + inflow,
-      wallets: Math.max(prev.wallets, wallets),
+/** One row of the Nansen Smart Money holdings response (fields we read). */
+interface NansenHolding {
+  chain?: string;
+  token_symbol?: string;
+  token_address?: string;
+  value_usd?: number;
+  holders_count?: number;
+  share_of_holdings_percent?: number;
+}
+
+/**
+ * Fetches Solana Smart Money holdings from Nansen, per the public OpenAPI spec:
+ * POST /api/v1/smart-money/holdings with an `apiKey` header and a
+ * `chains: ["solana"]` body. Returns the holdings array, or null when the key is
+ * absent, the call fails, or a non-200 status comes back. Auth/billing statuses
+ * (401/402/403/429) and the Nansen credit headers are logged explicitly so a
+ * key/credit problem is never silently mistaken for "no smart money" or a code
+ * bug. TODO: confirm the response field names against a live payload (egress to
+ * api.nansen.ai is policy-blocked in CI, so this maps the documented schema).
+ */
+async function fetchNansenHoldings(apiKey: string): Promise<NansenHolding[] | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SOURCE_TIMEOUT_MS);
+  try {
+    const res = await fetch(NANSEN_HOLDINGS_URL, {
+      method: "POST",
+      signal: controller.signal,
+      cache: "no-store",
+      headers: { apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chains: ["solana"],
+        filters: {
+          include_smart_money_labels: ["Fund", "Smart Trader"],
+          include_stablecoins: true,
+          include_native_tokens: true,
+        },
+        order_by: [{ field: "value_usd", direction: "DESC" }],
+        pagination: { page: 1, per_page: 100 },
+      }),
+    });
+
+    const creditsUsed = res.headers.get("X-Nansen-Credits-Used");
+    const creditsLeft = res.headers.get("X-Nansen-Credits-Remaining");
+    if (creditsUsed || creditsLeft) {
+      console.info(
+        `[nansen] credits used=${creditsUsed ?? "?"} remaining=${creditsLeft ?? "?"}`,
+      );
+    }
+
+    if (!res.ok) {
+      let detail = "";
+      try {
+        detail = (await res.text()).slice(0, 300);
+      } catch {
+        /* body unavailable */
+      }
+      const hint =
+        res.status === 401
+          ? "invalid API key"
+          : res.status === 402
+            ? "payment required (x402/MPP)"
+            : res.status === 403
+              ? "subscription tier or credit limit"
+              : res.status === 429
+                ? "rate limited"
+                : "unexpected status";
+      console.warn(`[nansen] holdings HTTP ${res.status} (${hint}) detail=${detail}`);
+      return null;
+    }
+
+    const json = (await res.json()) as { data?: unknown };
+    if (!json || !Array.isArray(json.data)) {
+      console.warn("[nansen] holdings 200 but unexpected shape (no data[] array)");
+      return null;
+    }
+    return json.data as NansenHolding[];
+  } catch (err) {
+    console.warn(
+      `[nansen] holdings fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Folds common symbol spelling/wrapping variants so pool tokens match Nansen. */
+function normalizeSymbol(s: string): string {
+  const t = s.trim().toLowerCase();
+  const aliases: Record<string, string> = {
+    usdbc: "usdc", // bridged USDC variant
+    wsol: "sol", // wrapped SOL
+  };
+  return aliases[t] ?? t;
+}
+
+/** Aggregates Nansen holdings by token symbol (USD held, holder count). */
+function indexHoldingsBySymbol(
+  holdings: NansenHolding[],
+): Map<string, { valueUsd: number; holders: number }> {
+  const map = new Map<string, { valueUsd: number; holders: number }>();
+  for (const h of holdings) {
+    if (!h || typeof h !== "object") continue;
+    const sym = typeof h.token_symbol === "string" ? normalizeSymbol(h.token_symbol) : null;
+    if (!sym) continue;
+    const valueUsd = typeof h.value_usd === "number" ? h.value_usd : 0;
+    const holders = typeof h.holders_count === "number" ? h.holders_count : 0;
+    const prev = map.get(sym) ?? { valueUsd: 0, holders: 0 };
+    map.set(sym, {
+      valueUsd: prev.valueUsd + valueUsd,
+      holders: Math.max(prev.holders, holders),
     });
   }
-  if (byProtocol.size === 0) return pools;
+  return map;
+}
 
-  return pools.map((p) => {
-    const hit = byProtocol.get(p.protocol.toLowerCase());
-    if (!hit) return p;
+/**
+ * Overlays Nansen Smart Money holdings onto the baseline. IMPORTANT: Nansen
+ * holdings are token-level (token_symbol / value_usd), not pool- or
+ * protocol-level — "which pool smart money sits in" is not available from this
+ * endpoint. So each pool's figure is the smart-money USD held in that pool's
+ * constituent tokens; pools sharing a token therefore share a value. That is a
+ * property of the data, not a fabricated per-pool signal. Pools whose tokens do
+ * not appear in the holdings keep their BASE_POOLS constant and are tagged
+ * "static" so a fixed sample is never mistaken for a live figure.
+ */
+function overlaySmartMoney(
+  pools: BasePool[],
+  holdings: NansenHolding[] | null,
+): { pools: SmartMoneyTagged[]; resolved: number } {
+  if (!holdings || holdings.length === 0) {
+    console.info("[overlaySmartMoney] live=0/" + pools.length + " (no Nansen holdings)");
+    return { pools: pools.map((p) => ({ ...p, smartMoneySource: "static" })), resolved: 0 };
+  }
+
+  const bySymbol = indexHoldingsBySymbol(holdings);
+  const resolvedLabels: string[] = [];
+  const tagged = pools.map((p): SmartMoneyTagged => {
+    let valueUsd = 0;
+    let holders = 0;
+    for (const sym of p.tokens) {
+      const hit = bySymbol.get(normalizeSymbol(sym));
+      if (!hit) continue;
+      valueUsd += hit.valueUsd;
+      holders = Math.max(holders, hit.holders);
+    }
+    if (valueUsd <= 0) return { ...p, smartMoneySource: "static" };
+    resolvedLabels.push(`${p.protocol} ${p.pool}`);
     return {
       ...p,
-      smartMoneyInflow7d: hit.inflow > 0 ? Math.round(hit.inflow) : p.smartMoneyInflow7d,
-      smartMoneyWallets: hit.wallets > 0 ? hit.wallets : p.smartMoneyWallets,
+      smartMoneyUsd: Math.round(valueUsd),
+      smartMoneyWallets: holders > 0 ? holders : p.smartMoneyWallets,
+      smartMoneySource: "live",
     };
   });
+
+  console.info(
+    `[overlaySmartMoney] live=${resolvedLabels.length}/${pools.length} ` +
+      (resolvedLabels.length ? `resolved=[${resolvedLabels.join(", ")}]` : "resolved=none"),
+  );
+  return { pools: tagged, resolved: resolvedLabels.length };
 }
 
 /** Normalized APY contribution from one protocol API, ready to overlay. */
@@ -248,7 +385,7 @@ function adaptJupiter(_raw: unknown): ApyRow[] {
  * pools onto a single value.
  */
 function overlayApy(
-  pools: BasePool[],
+  pools: SmartMoneyTagged[],
   sources: { kamino: unknown; drift: unknown; jupiter: unknown },
 ): EnrichedPool[] {
   const rows = [
@@ -259,7 +396,7 @@ function overlayApy(
 
   const resolved: string[] = [];
   const enriched = pools.map((p): EnrichedPool => {
-    const hit = rows.find(
+    const hit: ApyRow | undefined = rows.find(
       (r) =>
         r.protocol.toLowerCase() === p.protocol.toLowerCase() &&
         poolLabelMatches(p.pool, r.pool),
@@ -282,6 +419,9 @@ export interface ScoredData {
   liveSources: string[];
   // Count of pools whose apy was resolved to a live API value this scan.
   apyResolved: number;
+  // Count of pools whose smart-money figures were resolved from live Nansen
+  // holdings this scan.
+  smartMoneyResolved: number;
 }
 
 /**
@@ -291,31 +431,32 @@ export interface ScoredData {
 export async function getScoredPools(): Promise<ScoredData> {
   const nansenKey = process.env.NANSEN_API_KEY;
 
-  const [nansen, kamino, drift, jupiter] = await Promise.all([
-    nansenKey
-      ? safeJson("https://api.nansen.ai/defi/smart-money/positions?chain=solana", {
-          headers: { "x-api-key": nansenKey },
-        })
-      : Promise.resolve(null),
+  const [holdings, kamino, drift, jupiter] = await Promise.all([
+    nansenKey ? fetchNansenHoldings(nansenKey) : Promise.resolve(null),
     safeJson("https://api.kamino.finance/strategies?status=LIVE&sortBy=apyAsc"),
     safeJson("https://mainnet-beta.api.drift.trade/stats"),
     safeJson("https://price.jup.ag/v6/price?ids=USDC,SOL,mSOL,JitoSOL"),
   ]);
 
-  const liveSources: string[] = [];
-  if (nansen) liveSources.push("Nansen");
-  if (kamino) liveSources.push("Kamino");
-  if (drift) liveSources.push("Drift");
-  if (jupiter) liveSources.push("Jupiter");
-
-  const withSmartMoney = overlaySmartMoney(BASE_POOLS, nansen);
+  const { pools: withSmartMoney, resolved: smartMoneyResolved } = overlaySmartMoney(
+    BASE_POOLS,
+    holdings,
+  );
   const enriched = overlayApy(withSmartMoney, { kamino, drift, jupiter });
   const pools = enriched
     .map(scorePool)
     .sort((a, b) => b.yieldScore - a.yieldScore);
 
+  // "Nansen" is listed only when smart money actually resolved, so liveSources
+  // never implies live data that isn't there.
+  const liveSources: string[] = [];
+  if (smartMoneyResolved > 0) liveSources.push("Nansen");
+  if (kamino) liveSources.push("Kamino");
+  if (drift) liveSources.push("Drift");
+  if (jupiter) liveSources.push("Jupiter");
+
   const apyResolved = pools.filter((p) => p.apySource === "live").length;
-  return { pools, liveSources, apyResolved };
+  return { pools, liveSources, apyResolved, smartMoneyResolved };
 }
 
 export { round, clamp };
